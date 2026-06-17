@@ -1,0 +1,124 @@
+CREATE DATABASE IF NOT EXISTS simd_db;
+USE simd_db;
+
+CREATE TABLE product (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    sku VARCHAR(100) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    category VARCHAR(100),
+    selling_price DOUBLE NOT NULL,
+    cost_price DOUBLE NOT NULL,
+    stock_quantity INT NOT NULL DEFAULT 0,
+    low_stock_threshold INT NOT NULL DEFAULT 10,
+    active BOOLEAN DEFAULT TRUE
+);
+
+
+CREATE TABLE inventory_transaction (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    product_id BIGINT NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    quantity INT NOT NULL,
+    note VARCHAR(255),
+    created_at DATETIME NOT NULL,
+
+    CONSTRAINT fk_inventory_product
+        FOREIGN KEY (product_id)
+        REFERENCES product(id)
+        ON DELETE CASCADE
+);
+
+
+CREATE TABLE sale (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    invoice_number VARCHAR(100) NOT NULL UNIQUE,
+    customer_name VARCHAR(255) NOT NULL,
+    customer_phone VARCHAR(20),
+    subtotal DOUBLE NOT NULL DEFAULT 0,
+    tax_amount DOUBLE NOT NULL DEFAULT 0,
+    total_amount DOUBLE NOT NULL DEFAULT 0,
+    payment_status VARCHAR(50) NOT NULL,
+    sale_date DATETIME NOT NULL
+);
+
+
+CREATE TABLE sale_item (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    sale_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    quantity INT NOT NULL,
+    unit_price DOUBLE NOT NULL,
+    line_total DOUBLE NOT NULL,
+
+    CONSTRAINT fk_sale_item_sale
+        FOREIGN KEY (sale_id)
+        REFERENCES sale(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_sale_item_product
+        FOREIGN KEY (product_id)
+        REFERENCES product(id)
+);
+
+
+CREATE TABLE app_user (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255),
+    role VARCHAR(50) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+    last_login DATETIME
+);
+
+
+CREATE TABLE system_setting (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    company_name VARCHAR(255),
+    gstin VARCHAR(50),
+    phone VARCHAR(50),
+    address VARCHAR(500),
+    low_stock_threshold INT DEFAULT 10,
+    critical_stock_threshold INT DEFAULT 3,
+    reorder_lead_days INT DEFAULT 7,
+    default_gst_percentage DOUBLE DEFAULT 18,
+    email_low_stock_notifications BOOLEAN DEFAULT TRUE
+);
+
+
+CREATE INDEX idx_product_category ON product(category);
+CREATE INDEX idx_product_stock ON product(stock_quantity);
+CREATE INDEX idx_sale_date ON sale(sale_date);
+CREATE INDEX idx_sale_payment_status ON sale(payment_status);
+CREATE INDEX idx_inventory_created_at ON inventory_transaction(created_at);
+CREATE INDEX idx_inventory_product_id ON inventory_transaction(product_id);
+
+
+INSERT INTO product
+(sku, name, category, selling_price, cost_price, stock_quantity, low_stock_threshold, active)
+VALUES
+('LAP-DELL-XPS15', 'Laptop Dell XPS 15', 'Electronics', 145000, 128000, 24, 10, TRUE),
+('SSD-1TB-NVME', 'SSD 1TB NVMe', 'Storage', 8500, 6200, 80, 20, TRUE),
+('USB-HUB-7P', 'USB-C Hub 7-Port', 'Accessories', 3200, 2100, 3, 10, TRUE),
+('MON-4K-27', '27 inch 4K Monitor', 'Electronics', 28500, 24000, 18, 10, TRUE),
+('KEY-WIRELESS-K3', 'Wireless Keyboard K3', 'Peripherals', 2400, 1600, 0, 10, TRUE),
+('ROUTER-AX3000', 'WiFi Router AX3000', 'Networking', 6200, 4800, 5, 10, TRUE);
+
+
+
+INSERT INTO app_user
+(name, email, password, role, status, last_login)
+VALUES
+('Admin User', 'admin@simd.in', NULL, 'ADMIN', 'ACTIVE', '2026-06-10 10:30:00'),
+('Ravi Sharma', 'ravi@simd.in', NULL, 'MANAGER', 'ACTIVE', '2026-06-09 12:20:00'),
+('Priya Patel', 'priya@simd.in', NULL, 'STAFF', 'ACTIVE', '2026-06-10 09:15:00'),
+('Amit Verma', 'amit@simd.in', NULL, 'STAFF', 'INACTIVE', '2026-05-28 16:45:00');
+
+
+
+INSERT INTO system_setting
+(company_name, gstin, phone, address, low_stock_threshold, critical_stock_threshold, reorder_lead_days, default_gst_percentage, email_low_stock_notifications)
+VALUES
+('SIMD Technologies Pvt Ltd', '27AABCS1429B1Z1', '+91 20 1234 5678',
+ 'Hinjawadi Phase 1, Pune - 411057, Maharashtra',
+ 10, 3, 7, 18, TRUE);
